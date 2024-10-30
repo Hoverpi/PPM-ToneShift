@@ -228,7 +228,78 @@ void ppmFile_compress(PPMFile pf) {
     freeImage(cmpImage, pf->height);
 }
 
-void ppmFile_dithering(PPMFile pf);
+void ppmFile_dithering(PPMFile pf) {
+    if (!pf) return;
+
+    int height = pf->height - (pf->height % 2);
+    int width = pf->width - (pf->width % 2);
+
+    RGB **dthImage = createImage(pf->width, pf->height);
+    if (!dthImage) return;
+
+    int mask_100[2][2] = {{1, 1}, {1, 1}};
+    int mask_75[2][2] = {{1, 1}, {0, 1}};
+    int mask_50[2][2] = {{1, 0}, {0, 1}};
+    int mask_25[2][2] = {{1, 0}, {0, 0}};
+    int mask_0[2][2] = {{0, 0}, {0, 0}};
+
+    for(int i = 0; i < pf->height; ++i) {
+        for(int j = 0; j < pf->width; ++j) {
+            // Promedios de cada componente en el bloque 2x2
+            float redAvg = 0, greenAvg = 0, blueAvg = 0;
+            for (int x = 0; x < 2; ++x) {
+                for (int y = 0; y < 2; ++y) {
+                    redAvg += pf->image[i + x][j + y].red;
+                    greenAvg += pf->image[i + x][j + y].green;
+                    blueAvg += pf->image[i + x][j + y].blue;
+                }
+            }
+            redAvg /= 4;
+            greenAvg /= 4;
+            blueAvg /= 4;
+
+            // Seleccionar máscaras según promedios
+            int (*redMask)[2] = (redAvg > 0.875 * 255) ? mask_100 :
+                                (redAvg > 0.625 * 255) ? mask_75 :
+                                (redAvg > 0.375 * 255) ? mask_50 :
+                                (redAvg > 0.125 * 255) ? mask_25 : mask_0;
+
+            int (*greenMask)[2] = (greenAvg > 0.875 * 255) ? mask_100 :
+                                  (greenAvg > 0.625 * 255) ? mask_75 :
+                                  (greenAvg > 0.375 * 255) ? mask_50 :
+                                  (greenAvg > 0.125 * 255) ? mask_25 : mask_0;
+
+            int (*blueMask)[2] = (blueAvg > 0.875 * 255) ? mask_100 :
+                                 (blueAvg > 0.625 * 255) ? mask_75 :
+                                 (blueAvg > 0.375 * 255) ? mask_50 :
+                                 (blueAvg > 0.125 * 255) ? mask_25 : mask_0;
+
+            // Asignar los valores ditherizados a los 4 píxeles en dthImage
+            for (int x = 0; x < 2; ++x) {
+                for (int y = 0; y < 2; ++y) {
+                    dthImage[i + x][j + y].red = redMask[x][y] * pf->maxColor;
+                    dthImage[i + x][j + y].green = greenMask[x][y] * pf->maxColor;
+                    dthImage[i + x][j + y].blue = blueMask[x][y] * pf->maxColor;
+                }
+            }
+        }
+    }
+
+    int prefixlength = strlen("dth_");
+    char *newName = (char*) malloc(sizeof(char) * (prefixlength + pf->lengthName + 1));
+
+    if(!newName) {
+        freeImage(dthImage, pf->height);
+        return;
+    }
+
+    strcpy(newName, "dth_");
+    strcat(newName, pf->filename);
+
+    saveImage(newName, pf->width, pf->height, pf->maxColor, dthImage);
+    free(newName);
+    freeImage(dthImage, pf->height);
+}
 
 void ppmFile_destroy(PPMFile pf) {
     if(!image) return;

@@ -4,6 +4,7 @@
 #include <string.h>
 
 int main() {
+    char mensaje = "---------------------------------";
     char temp[30];
     printf("Ingrese el nombre del archivo: ");
     scanf("%s", temp);
@@ -23,13 +24,25 @@ int main() {
         return 1;
     }
 
+    printf("%s", mensaje);
+
     ppmFile_blackAndWhite(pf);
+    printf("%s", mensaje);
+
     ppmFile_grayscale(pf);
+    printf("%s", mensaje);
+    
     ppmFile_compress(pf);
+    printf("%s", mensaje);
+    
     ppmFile_dithering(pf);
+    printf("%s", mensaje);
 
     free(filename);
+    printf("%s", mensaje);
+    
     ppmFile_destroy(pf);
+    printf("%s", mensaje);
 
     return 0;
 }
