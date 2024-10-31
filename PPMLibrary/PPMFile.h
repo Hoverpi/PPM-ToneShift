@@ -12,13 +12,14 @@ typedef struct strPPMFile {
     int lengthName;
     int width;
     int height;
-    int maxColor;
+    unsigned int maxColor;
     RGB **image;
 } *PPMFile;
 
 RGB** createImage(int width, int height);
 void freeImage(RGB **image, int height);
 void saveImage(const char *filename, int width, int height, int maxColor, RGB **image);
+unsigned int clamp(unsigned int value, unsigned int min, unsigned int max);
 
 PPMFile ppmFile_create(const char *name);
 void ppmFile_blackAndWhite(PPMFile pf);

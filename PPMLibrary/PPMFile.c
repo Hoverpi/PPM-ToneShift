@@ -129,11 +129,11 @@ void ppmFile_blackAndWhite(PPMFile pf) {
 
     for (int i = 0; i < pf->height; ++i) {
         for (int j = 0; j < pf->width; ++j) {
-            unsigned int r = pf->image[i][j].red;
-            unsigned int g = pf->image[i][j].green;
-            unsigned int b = pf->image[i][j].blue;
+            unsigned char r = pf->image[i][j].red;
+            unsigned char g = pf->image[i][j].green;
+            unsigned char b = pf->image[i][j].blue;
 
-            unsigned int bw = (unsigned int) round((( r + g + b) / 3.0) / 255);
+            unsigned char bw = (unsigned char) round(((r + g + b) / 3.0) / pf->ma);
 
             bwImage[i][j].red = bw;
             bwImage[i][j].green = bw;
@@ -169,11 +169,11 @@ void ppmFile_grayscale(PPMFile pf) {
 
     for (int i = 0; i < pf->height; ++i) {
         for (int j = 0; j < pf->width; ++j) {
-            unsigned int r = pf->image[i][j].red;
-            unsigned int g = pf->image[i][j].green;
-            unsigned int b = pf->image[i][j].blue;
+            unsigned char r = pf->image[i][j].red;
+            unsigned char g = pf->image[i][j].green;
+            unsigned char b = pf->image[i][j].blue;
 
-            unsigned int gs = (unsigned int) round((r + g + b) / 3.0);
+            unsigned char gs = (unsigned char) round((r + g + b) / 3.0);
 
             gsImage[i][j].red = gs;
             gsImage[i][j].green = gs;
@@ -209,13 +209,13 @@ void ppmFile_compress(PPMFile pf) {
 
     for (int i = 0; i < pf->height; ++i) {
         for (int j = 0; j < pf->width; ++j) {
-            unsigned int r = pf->image[i][j].red;
-            unsigned int g = pf->image[i][j].green;
-            unsigned int b = pf->image[i][j].blue;
+            unsigned char r = pf->image[i][j].red;
+            unsigned char g = pf->image[i][j].green;
+            unsigned char b = pf->image[i][j].blue;
 
-            r = (unsigned int) round(r / 255.0);
-            g = (unsigned int) round(g / 255.0);
-            b = (unsigned int) round(b / 255.0);
+            r = (unsigned char) round(r / 255.0);
+            g = (unsigned char) round(g / 255.0);
+            b = (unsigned char) round(b / 255.0);
 
             cmpImage[i][j].red = r * 255;
             cmpImage[i][j].green = g * 255;
@@ -243,64 +243,72 @@ void ppmFile_compress(PPMFile pf) {
 void ppmFile_dithering(PPMFile pf) {
     if (!pf) return;
 
-    // Asegurarse de que las dimensiones son pares
-    int height = pf->height - (pf->height % 2);
-    int width = pf->width - (pf->width % 2);
-
     // Crear la imagen dithered
-    RGB **dithImage = createImage(width, height);
+    RGB **dithImage = createImage(pf->width, pf->height);
     if (!dithImage) {
         fprintf(stderr, "Error al crear la imagen dithered.\n");
         return;
     }
 
-    for (int i = 0; i < height; i += 2) {
-        for (int j = 0; j < width; j += 2) {
-            // Obtener los colores de los cuatro píxeles
-            unsigned int r1 = pf->image[i][j].red;
-            unsigned int g1 = pf->image[i][j].green;
-            unsigned int b1 = pf->image[i][j].blue;
-
-            unsigned int r2 = pf->image[i][j + 1].red;
-            unsigned int g2 = pf->image[i][j + 1].green;
-            unsigned int b2 = pf->image[i][j + 1].blue;
-
-            unsigned int r3 = pf->image[i + 1][j].red;
-            unsigned int g3 = pf->image[i + 1][j].green;
-            unsigned int b3 = pf->image[i + 1][j].blue;
-
-            unsigned int r4 = pf->image[i + 1][j + 1].red;
-            unsigned int g4 = pf->image[i + 1][j + 1].green;
-            unsigned int b4 = pf->image[i + 1][j + 1].blue;
-
-            // Promediar los colores
-            unsigned int rAvg = (r1 + r2 + r3 + r4) / 4;
-            unsigned int gAvg = (g1 + g2 + g3 + g4) / 4;
-            unsigned int bAvg = (b1 + b2 + b3 + b4) / 4;
-
-            dithImage[i][j].red = rAvg;
-            dithImage[i][j].green = gAvg;
-            dithImage[i][j].blue = bAvg;
-
-            dithImage[i][j + 1].red = rAvg;
-            dithImage[i][j + 1].green = gAvg;
-            dithImage[i][j + 1].blue = gAvg;
-
-            dithImage[i + 1][j].red = rAvg;
-            dithImage[i + 1][j].green = gAvg;
-            dithImage[i + 1][j].blue = gAvg;
-
-            dithImage[i + 1][j + 1].red = rAvg;
-            dithImage[i + 1][j + 1].green = gAvg;
-            dithImage[i + 1][j + 1].blue = gAvg;
+    for (int i = 0; i < pf->height; ++i) {
+        for (int j = 0; j < pf->width; ++j) {
+            dithImage[i][j].red = pf->image[i][j].red;
+            dithImage[i][j].green = pf->image[i][j].green;
+            dithImage[i][j].blue = pf->image[i][j].blue;
         }
     }
 
+    // Aplicar el algoritmo de dithering de Floyd-Steinberg
+    for (int y = 0; y < pf->height; y++) {
+        for (int x = 0; x < pf->width; x++) {
+            unsigned int oldRed = dithImage[y][x].red;
+            unsigned int oldGreen = dithImage[y][x].green;
+            unsigned int oldBlue = dithImage[y][x].blue;
+
+            // Cuantización a 0 o maxColor
+            unsigned int newRed = (oldRed > pf->maxColor / 2) ? pf->maxColor : 0;
+            unsigned int newGreen = (oldGreen > pf->maxColor / 2) ? pf->maxColor : 0;
+            unsigned int newBlue = (oldBlue > pf->maxColor / 2) ? pf->maxColor : 0;
+
+            dithImage[y][x].red = newRed;
+            dithImage[y][x].green = newGreen;
+            dithImage[y][x].blue = newBlue;
+
+            // Calcular errores
+            unsigned int redError = oldRed - newRed;
+            unsigned int greenError = oldGreen - newGreen;
+            unsigned int blueError = oldBlue - newBlue;
+
+            // Distribuir el error a los vecinos si están dentro de los límites
+            if (x + 1 < pf->width) {
+                dithImage[y][x + 1].red = (unsigned int) clamp(dithImage[y][x + 1].red + redError * 7 / 16.0, 0, pf->maxColor);
+                dithImage[y][x + 1].green = (unsigned int) clamp(dithImage[y][x + 1].green + greenError * 7 / 16.0, 0, pf->maxColor);
+                dithImage[y][x + 1].blue = (unsigned int) clamp(dithImage[y][x + 1].blue + blueError * 7 / 16.0, 0, pf->maxColor);
+            }
+            if (y + 1 < pf->height) {
+                if (x > 0) {
+                    dithImage[y + 1][x - 1].red = clamp(dithImage[y + 1][x - 1].red + redError * 3 / 16, 0, pf->maxColor);
+                    dithImage[y + 1][x - 1].green = clamp(dithImage[y + 1][x - 1].green + greenError * 3 / 16, 0, pf->maxColor);
+                    dithImage[y + 1][x - 1].blue = clamp(dithImage[y + 1][x - 1].blue + blueError * 3 / 16, 0, pf->maxColor);
+                }
+                dithImage[y + 1][x].red = clamp(dithImage[y + 1][x].red + redError * 5 / 16, 0, pf->maxColor);
+                dithImage[y + 1][x].green = clamp(dithImage[y + 1][x].green + greenError * 5 / 16, 0, pf->maxColor);
+                dithImage[y + 1][x].blue = clamp(dithImage[y + 1][x].blue + blueError * 5 / 16, 0, pf->maxColor);
+
+                if (x + 1 < pf->width) {
+                    dithImage[y + 1][x + 1].red = clamp(dithImage[y + 1][x + 1].red + redError * 1 / 16, 0, pf->maxColor);
+                    dithImage[y + 1][x + 1].green = clamp(dithImage[y + 1][x + 1].green + greenError * 1 / 16, 0, pf->maxColor);
+                    dithImage[y + 1][x + 1].blue = clamp(dithImage[y + 1][x + 1].blue + blueError * 1 / 16, 0, pf->maxColor);
+                }
+            }
+        }
+    }
+
+    // Guardar la imagen dithered
     int prefixlength = strlen("dth_");
     char *newName = (char*) malloc(sizeof(char) * (prefixlength + pf->lengthName + 1));
-
     if (!newName) {
-        freeImage(dithImage, height);
+        freeImage(dithImage, pf->height);
         fprintf(stderr, "Error al asignar memoria para el nuevo nombre de archivo.\n");
         return;
     }
@@ -308,9 +316,10 @@ void ppmFile_dithering(PPMFile pf) {
     strcpy(newName, "dth_");
     strcat(newName, pf->filename);
 
-    saveImage(newName, width, height, pf->maxColor, dithImage);
+    saveImage(newName, pf->width, pf->height, pf->maxColor, dithImage);
+
     free(newName);
-    freeImage(dithImage, height);
+    freeImage(dithImage, pf->height);
 }
 
 void ppmFile_destroy(PPMFile pf) {
@@ -319,4 +328,10 @@ void ppmFile_destroy(PPMFile pf) {
         free(pf->filename);
         free(pf);
     }
+}
+
+unsigned int clamp(unsigned int value, unsigned int min, unsigned int max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
 }
