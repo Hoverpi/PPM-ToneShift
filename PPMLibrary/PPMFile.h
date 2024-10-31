@@ -19,7 +19,7 @@ typedef struct strPPMFile {
 RGB** createImage(int width, int height);
 void freeImage(RGB **image, int height);
 void saveImage(const char *filename, int width, int height, int maxColor, RGB **image);
-unsigned int clamp(unsigned int value, unsigned int min, unsigned int max);
+unsigned char clamp(unsigned char value, unsigned char min, unsigned char max);
 
 PPMFile ppmFile_create(const char *name);
 void ppmFile_blackAndWhite(PPMFile pf);

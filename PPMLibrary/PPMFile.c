@@ -133,7 +133,7 @@ void ppmFile_blackAndWhite(PPMFile pf) {
             unsigned char g = pf->image[i][j].green;
             unsigned char b = pf->image[i][j].blue;
 
-            unsigned char bw = (unsigned char) round(((r + g + b) / 3.0) / pf->ma);
+            unsigned char bw = (unsigned char) round(((r + g + b) / 3.0) / pf->maxColor);
 
             bwImage[i][j].red = bw;
             bwImage[i][j].green = bw;
@@ -261,29 +261,29 @@ void ppmFile_dithering(PPMFile pf) {
     // Aplicar el algoritmo de dithering de Floyd-Steinberg
     for (int y = 0; y < pf->height; y++) {
         for (int x = 0; x < pf->width; x++) {
-            unsigned int oldRed = dithImage[y][x].red;
-            unsigned int oldGreen = dithImage[y][x].green;
-            unsigned int oldBlue = dithImage[y][x].blue;
+            unsigned char oldRed = dithImage[y][x].red;
+            unsigned char oldGreen = dithImage[y][x].green;
+            unsigned char oldBlue = dithImage[y][x].blue;
 
             // Cuantización a 0 o maxColor
-            unsigned int newRed = (oldRed > pf->maxColor / 2) ? pf->maxColor : 0;
-            unsigned int newGreen = (oldGreen > pf->maxColor / 2) ? pf->maxColor : 0;
-            unsigned int newBlue = (oldBlue > pf->maxColor / 2) ? pf->maxColor : 0;
+            unsigned char newRed = (oldRed > pf->maxColor / 2) ? pf->maxColor : 0;
+            unsigned char newGreen = (oldGreen > pf->maxColor / 2) ? pf->maxColor : 0;
+            unsigned char newBlue = (oldBlue > pf->maxColor / 2) ? pf->maxColor : 0;
 
             dithImage[y][x].red = newRed;
             dithImage[y][x].green = newGreen;
             dithImage[y][x].blue = newBlue;
 
             // Calcular errores
-            unsigned int redError = oldRed - newRed;
-            unsigned int greenError = oldGreen - newGreen;
-            unsigned int blueError = oldBlue - newBlue;
+            unsigned char redError = oldRed - newRed;
+            unsigned char greenError = oldGreen - newGreen;
+            unsigned char blueError = oldBlue - newBlue;
 
             // Distribuir el error a los vecinos si están dentro de los límites
             if (x + 1 < pf->width) {
-                dithImage[y][x + 1].red = (unsigned int) clamp(dithImage[y][x + 1].red + redError * 7 / 16.0, 0, pf->maxColor);
-                dithImage[y][x + 1].green = (unsigned int) clamp(dithImage[y][x + 1].green + greenError * 7 / 16.0, 0, pf->maxColor);
-                dithImage[y][x + 1].blue = (unsigned int) clamp(dithImage[y][x + 1].blue + blueError * 7 / 16.0, 0, pf->maxColor);
+                dithImage[y][x + 1].red = (unsigned char) clamp(dithImage[y][x + 1].red + redError * 7 / 16.0, 0, pf->maxColor);
+                dithImage[y][x + 1].green = (unsigned char) clamp(dithImage[y][x + 1].green + greenError * 7 / 16.0, 0, pf->maxColor);
+                dithImage[y][x + 1].blue = (unsigned char) clamp(dithImage[y][x + 1].blue + blueError * 7 / 16.0, 0, pf->maxColor);
             }
             if (y + 1 < pf->height) {
                 if (x > 0) {
@@ -330,7 +330,7 @@ void ppmFile_destroy(PPMFile pf) {
     }
 }
 
-unsigned int clamp(unsigned int value, unsigned int min, unsigned int max) {
+unsigned char clamp(unsigned char value, unsigned char min, unsigned char max) {
     if (value < min) return min;
     if (value > max) return max;
     return value;
