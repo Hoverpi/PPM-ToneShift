@@ -47,6 +47,8 @@ void saveImage(const char *filename, int width, int height, int maxColor, RGB **
     printf("Imagen guardada: %s\n", filename);
 }
 
+
+
 PPMFile ppmFile_create(const char *name) {
     FILE *f = fopen(name, "r");
     if (!f) {
@@ -131,7 +133,7 @@ void ppmFile_blackAndWhite(PPMFile pf) {
             unsigned int g = pf->image[i][j].green;
             unsigned int b = pf->image[i][j].blue;
 
-            unsigned int bw = (unsigned int) round(((r + g + b) / 3.0));
+            unsigned int bw = (unsigned int) round((( r + g + b) / 3.0) / 255);
 
             bwImage[i][j].red = bw;
             bwImage[i][j].green = bw;
@@ -151,7 +153,7 @@ void ppmFile_blackAndWhite(PPMFile pf) {
     strcpy(newName, "bw_");
     strcat(newName, pf->filename);
 
-    saveImage(newName, pf->width, pf->height, 255, bwImage);
+    saveImage(newName, pf->width, pf->height, 1, bwImage);
     free(newName);
     freeImage(bwImage, pf->height);
 }
