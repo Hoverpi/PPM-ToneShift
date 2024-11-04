@@ -1,25 +1,7 @@
 #ifndef PPMFILE_H
 #define PPMFILE_H
 
-typedef struct strRGB {
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
-} RGB;
-
-typedef struct strPPMFile {
-    char *filename;
-    int lengthName;
-    int width;
-    int height;
-    unsigned int maxColor;
-    RGB **image;
-} *PPMFile;
-
-RGB** createImage(int width, int height);
-void freeImage(RGB **image, int height);
-void saveImage(const char *filename, int width, int height, int maxColor, RGB **image);
-unsigned char clamp(unsigned char value, unsigned char min, unsigned char max);
+typedef struct strPPMFile * PPMFile;
 
 PPMFile ppmFile_create(const char *name);
 void ppmFile_blackAndWhite(PPMFile pf);

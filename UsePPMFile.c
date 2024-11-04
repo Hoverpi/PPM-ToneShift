@@ -30,7 +30,7 @@ int main() {
     
     ppmFile_compress(pf);
     
-    ppmFile_dithering(pf);
+    // ppmFile_dithering(pf);
 
     free(filename);
     
